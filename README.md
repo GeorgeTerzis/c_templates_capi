@@ -71,11 +71,11 @@ clang++ -std=c++20 main.cpp -lclang -o c_templates_capi
 ## Usage
 
 ```sh
-./c_templates_capi <input_file>
+./main.out <input_file>
 ```
 
 Output is written to stdout so you can redirect it:
 
 ```sh
-./c_templates_capi ./src/my_types.c > generated.h
+./main.out ./src/my_types.c > generated.h
 ```
