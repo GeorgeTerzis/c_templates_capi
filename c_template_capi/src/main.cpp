@@ -20,16 +20,16 @@ int main(int argc, char** argv) {
         for (uint64_t i = 1; i < argc; i++)
             cpp_args = std::string(argv[i]) + " ";
 
-        std::cerr << "Working directory: \"" << cwd.string() << "\"" << "\n----"
-                  << "arguments: \"" << cpp_args << "\"" << "\n\n";
+        // std::cerr << "Working directory: \"" << cwd.string() << "\"" << "\n----"
+        //           << "arguments: \"" << cpp_args << "\"" << "\n\n";
 
         std::string clang_args;
         for (uint64_t i = 0; i < sizeof args / sizeof *args; i++)
             clang_args += std::string(args[i]) + " ";
 
-        std::cerr << "Analysing file: \"" << filename << "\"" << "\n----"
-                  << "clang arguments: \"" << clang_args << "\"" << "\n\n"
-                  << "\n";
+        // std::cerr << "Analysing file: \"" << filename << "\"" << "\n----"
+        //           << "clang arguments: \"" << clang_args << "\"" << "\n\n"
+        //           << "\n";
     }
 
     // Init
@@ -92,7 +92,7 @@ int main(int argc, char** argv) {
         std::cerr << ('\n');
     }
 
-    std::cerr << "--------OUTPUT--------" << std::endl;
+    // std::cerr << "--------OUTPUT--------" << std::endl;
 
     // Output
 
