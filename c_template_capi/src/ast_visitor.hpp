@@ -215,7 +215,7 @@ class ast_visitor {
             nested_types.insert(f.var_type_data.nested_template_types.begin(),
                                 f.var_type_data.nested_template_types.end());
         }
-        std::cerr << "Record: " << name << "\n";
+        // std::cerr << "Record: " << name << "\n";
         const auto range = source_range(cursor);
 
         const record_data rd = {{name, tt, bools, nested_types}, fields, range};

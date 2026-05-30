@@ -1,4 +1,3 @@
 #!/bin/bash
-#
-#
-g++ ./src/main.cpp -lclang -foptimize-sibling-calls -O0 -g0
+
+clang++ ./src/main.cpp -lclang -foptimize-sibling-calls -O3 -g0 -o main.out
