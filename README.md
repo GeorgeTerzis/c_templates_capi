@@ -65,7 +65,7 @@ Requires libclang. Adjust the include/library paths for your system:
 compiling with g++ works but I use clang so I would suggest using that, but keep in mind I have seed gcc fail compiling when clang passed just fine.
 
 ```sh
-clang++ -std=c++20 main.cpp -lclang -o c_templates_capi
+clang++ ./src/main.cpp -lclang -o main.out
 ```
 
 ## Usage
