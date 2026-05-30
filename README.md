@@ -4,7 +4,7 @@ A proof-of-concept tool that generates C macro-based generics by parsing C sourc
 
 ## What it does
 
-C doesn't have generics. The usual workarounds are `void*` (no type safety), macros written by hand (tedious and error-prone), or code generation. This tool takes a third approach: you annotate your C structs and functions with special naming conventions, and the tool generates a re-includable header that uses `##` token-pasting macros to stamp out type-safe instantiations.
+C doesn't have generics. The usual workarounds are `void*`, macros written by hand, or code generation. This tool takes a third approach: you annotate your C structs and functions with special naming conventions, and the tool generates a re-includable header that uses `##` token-pasting macros to stamp out type-safe instantiations.
 
 The output is a header you can include multiple times with different type definitions:
 
