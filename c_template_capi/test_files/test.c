@@ -1,34 +1,33 @@
 #include <malloc.h>
-#include <stdio.h>
-#include "./template_utils.h"
-//A$ means that it is a auxilary type that
-//is to be copied as is
-//
-//T$ means that it is a template
-//T<number>$ is a Template type
 
-TEMPLATE_TYPEDEF(0)
-TEMPLATE_TYPEDEF(1)
-TEMPLATE_TYPEDEF(2)
+#define TI_TYPEDEF(name)                                                                 \
+    typedef struct {                                                                     \
+        int dummy;                                                                       \
+    } name##_ti;
 
+TI_TYPEDEF(a)
+TI_TYPEDEF(b)
 
-struct list_T${
-  unsigned long size;
-  unsigned long capacity;
-  T0$ ptr[];
-};
+typedef struct {
+    a_ti my_field;
+    int cint;
+    a_ti* (^block_func)(b_ti);
+} my_entity_te;
 
+typedef struct {
+    int b;
+} my_aux_ta;
 
-struct aux_A${
-  unsigned int i;
-  unsigned int c;
-  float b;
-};
-
-struct list_T$ list_T$_(unsigned long* cap){
-  struct list_T$ result;
-  result = (struct list_T$){2,2};
-  return result;
+int func_b_te(b_ti b) {
+    return 0;
 }
 
+int my_func_ta(int a) {
+    int c = 10;
+    return c;
+}
 
+int my_func_te(int a) {
+    int c = func_b_te((b_ti){10});
+    return c;
+}

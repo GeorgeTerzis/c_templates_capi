@@ -1,186 +1,240 @@
 #pragma once
 
-#include <string>
 #include <map>
-#include <set>
 #include <optional>
+#include <set>
+#include <string>
 
 #include <clang-c/Index.h>
 
+#include "macro_utils.hpp"
 #include "ttype_regex.hpp"
 
-struct type_bools{
-  bool is_ptr = false;
-  bool is_block = false;
-  bool is_fptr = false;
-  bool is_fnproto = false;
+struct type_bools {
+    bool is_ptr = false;
+    bool is_block = false;
+    bool is_fptr = false;
+    bool is_fproto = false;
+    bool is_fnproto = false;
 
-  bool is_typedef = false;
+    bool is_typedef = false;
 
-  bool is_carray = false;
-  bool is_varray = false;
-  bool is_iarray = false;
-  
-  bool is_builtin = false;
-  bool is_complex = false;
-  bool is_vector = false;
-  bool is_auto = false;
+    bool is_carray = false;
+    bool is_varray = false;
+    bool is_iarray = false;
 
-  bool is_atomic = false;
+    bool is_builtin = false;
+    bool is_complex = false;
+    bool is_vector = false;
+    bool is_auto = false;
 
-  bool is_elaborated = false;
-  bool is_record = false;
-  bool is_struct = false;
-  bool is_union = false;
+    bool is_atomic = false;
 
-  bool is_enum = false;
-  bool is_unexposed = false;
+    bool is_elaborated = false;
+    bool is_record = false;
+    bool is_struct = false;
+    bool is_union = false;
+
+    bool is_enum = false;
+    bool is_unexposed = false;
 };
 
-void type_bools_analysis_rec(CXType ctype, type_bools &v, bool has_val = true) {
-  if(!has_val) return;
+void type_bools_analysis_rec(CXType ctype, type_bools& v) {
+    std::optional<CXType> rctype;
 
-  std::optional<CXType> rctype;
-
-  if(ctype.kind == CXType_Unexposed) {
-    v.is_unexposed = true;
-  } else if (ctype.kind == CXType_BlockPointer) {
-    v.is_ptr = false;
-    v.is_fptr = false;
-    v.is_block = true;
-  } else if (ctype.kind == CXType_FunctionProto) {
-    v.is_ptr = false;
-    v.is_fptr = true;
-  } else if (ctype.kind == CXType_Pointer) {
-    v.is_ptr = true;
-    rctype = clang_getPointeeType(ctype);
-  } else if (ctype.kind == CXType_ConstantArray || 
-             ctype.kind == CXType_VariableArray ||
-             ctype.kind == CXType_IncompleteArray) {
-    if (ctype.kind == CXType_ConstantArray) {
-      v.is_carray = true;
-    } else if (ctype.kind == CXType_VariableArray) {
-      v.is_varray = true;
-    } else if (ctype.kind == CXType_IncompleteArray) {
-      v.is_iarray = true;
+    switch (ctype.kind) {
+    case CXType_Unexposed:
+        v.is_unexposed = true;
+        break;
+    case CXType_BlockPointer:
+        v.is_fptr = false;
+        v.is_block = true;
+        break;
+    case CXType_FunctionProto:
+        if (v.is_ptr) {
+            v.is_ptr = false;
+            v.is_fptr = true;
+        }
+        v.is_fproto = true;
+        break;
+    case CXType_Pointer:
+        v.is_ptr = true;
+        rctype = clang_getPointeeType(ctype);
+        break;
+    case CXType_ConstantArray:
+        v.is_carray = true;
+        rctype = clang_getArrayElementType(ctype);
+        break;
+    case CXType_VariableArray:
+        v.is_varray = true;
+        rctype = clang_getArrayElementType(ctype);
+        break;
+    case CXType_IncompleteArray:
+        v.is_iarray = true;
+        rctype = clang_getArrayElementType(ctype);
+        break;
+    case CXType_Enum:
+        v.is_enum = true;
+        break;
+    case CXType_Record:
+        v.is_record = true;
+        break;
+    case CXType_Complex:
+        v.is_complex = true;
+        break;
+    case CXType_FunctionNoProto:
+        v.is_fnproto = true;
+        break;
+    case CXType_Vector:
+        v.is_vector = true;
+        break;
+    case CXType_Elaborated:
+        v.is_elaborated = true;
+        rctype = clang_Type_getNamedType(ctype);
+        break;
+    case CXType_Typedef:
+        v.is_typedef = true;
+        rctype = clang_getCanonicalType(ctype);
+        break;
+    case CXType_Atomic:
+        v.is_atomic = true;
+        break;
+    default:
+        if (ctype.kind >= CXType_FirstBuiltin && ctype.kind <= CXType_LastBuiltin)
+            v.is_builtin = true;
+        break;
     }
-    rctype = clang_getArrayElementType(ctype);
-  } else if (ctype.kind == CXType_Enum) { 
-    v.is_enum = true; 
-  } else if (ctype.kind == CXType_Record) { 
-    v.is_record = true;
-  } else if(ctype.kind == CXType_Complex) { 
-    v.is_complex = true;
-  } else if(ctype.kind == CXType_FunctionNoProto) { 
-    v.is_fnproto = true;
-  } else if(ctype.kind == CXType_Vector) {
-    v.is_vector = true;
-  } else if(ctype.kind == CXType_Elaborated) {
-    v.is_elaborated = true;
-    rctype = clang_Type_getNamedType(ctype);
-  } else if(ctype.kind == CXType_Typedef) {
-    v.is_typedef = true;
-    rctype = clang_getCanonicalType(ctype);
-  } else if(ctype.kind >= CXType_FirstBuiltin && ctype.kind <= CXType_LastBuiltin){
-    v.is_builtin = true; 
-  } else if(ctype.kind == CXType_Atomic) {
-    v.is_atomic = true;
-  }
 
-  has_val = rctype.has_value();
-  type_bools_analysis_rec(rctype.value_or(CXType()), v, has_val);
+    if (rctype.has_value())
+        type_bools_analysis_rec(*rctype, v);
 }
 
-inline
-type_bools type_bools_analysis(CXType ctype){
-  type_bools vb;
-  type_bools_analysis_rec(ctype, vb); 
-  return vb;
+inline type_bools type_bools_analysis(CXType ctype) {
+    type_bools vb;
+    type_bools_analysis_rec(ctype, vb);
+    return vb;
 }
 
-
-void type_bools_print(const type_bools& vb){
-  if(vb.is_complex) std::cout << "------is_complex"       << "\n";
-  if(vb.is_ptr) std::cout << "------is_ptr"               << "\n";
-  if(vb.is_block) std::cout << "------is_block"           << "\n";
-  if(vb.is_fptr) std::cout << "------is_fptr"             << "\n";
-  if(vb.is_fnproto) std::cout << "------is_fnproto"       << "\n";
-  if(vb.is_typedef) std::cout << "------is_typedef"       << "\n";
-  if(vb.is_carray) std::cout << "------is_carray"         << "\n";
-  if(vb.is_varray) std::cout << "------is_varray"         << "\n";
-  if(vb.is_iarray) std::cout << "------is_iarray"         << "\n";
-  if(vb.is_vector) std::cout << "------is_vector"         << "\n";
-  if(vb.is_auto) std::cout << "------is_auto"             << "\n";
-  if(vb.is_elaborated) std::cout << "------is_elaborated" << "\n";
-  if(vb.is_builtin) std::cout << "------is_builtin"       << "\n";
-  if(vb.is_record) std::cout << "------is_record"         << "\n";
-  if(vb.is_struct) std::cout << "------is_struct"         << "\n";
-  if(vb.is_union) std::cout << "------is_union"           << "\n";
-  if(vb.is_enum) std::cout << "------is_enum"             << "\n";
-  if(vb.is_atomic) std::cout << "------is_atomic"         << "\n";
+void type_bools_print(const type_bools& vb) {
+    if (vb.is_complex)
+        std::cerr << "------is_complex" << "\n";
+    if (vb.is_ptr)
+        std::cerr << "------is_ptr" << "\n";
+    if (vb.is_fproto)
+        std::cerr << "------is_fproto" << "\n";
+    if (vb.is_block)
+        std::cerr << "------is_block" << "\n";
+    if (vb.is_fptr)
+        std::cerr << "------is_fptr" << "\n";
+    if (vb.is_fnproto)
+        std::cerr << "------is_fnproto" << "\n";
+    if (vb.is_typedef)
+        std::cerr << "------is_typedef" << "\n";
+    if (vb.is_carray)
+        std::cerr << "------is_carray" << "\n";
+    if (vb.is_varray)
+        std::cerr << "------is_varray" << "\n";
+    if (vb.is_iarray)
+        std::cerr << "------is_iarray" << "\n";
+    if (vb.is_vector)
+        std::cerr << "------is_vector" << "\n";
+    if (vb.is_auto)
+        std::cerr << "------is_auto" << "\n";
+    if (vb.is_elaborated)
+        std::cerr << "------is_elaborated" << "\n";
+    if (vb.is_builtin)
+        std::cerr << "------is_builtin" << "\n";
+    if (vb.is_record)
+        std::cerr << "------is_record" << "\n";
+    if (vb.is_struct)
+        std::cerr << "------is_struct" << "\n";
+    if (vb.is_union)
+        std::cerr << "------is_union" << "\n";
+    if (vb.is_enum)
+        std::cerr << "------is_enum" << "\n";
+    if (vb.is_atomic)
+        std::cerr << "------is_atomic" << "\n";
 }
 
-struct type_data{
-  std::string type;
-  template_type tt;
-  type_bools bools;
-  std::set<std::string> nested_template_types;
+struct source_range {
+    unsigned int start = 0;
+    unsigned int end = 0;
+
+    source_range() {}
+
+    source_range(CXCursor cursor) {
+        const CXSourceRange srange = clang_getCursorExtent(cursor);
+        const CXSourceLocation cstart = clang_getRangeStart(srange);
+        const CXSourceLocation cend = clang_getRangeEnd(srange);
+
+        clang_getFileLocation(cstart, NULL, NULL, NULL, &this->start);
+        clang_getFileLocation(cend, NULL, NULL, NULL, &this->end);
+    }
 };
 
-
-struct source_range{
-  unsigned  start = -1;
-  unsigned  end = -1;
-
-  source_range(){}
-
-  source_range(CXCursor cursor){
-    CXSourceRange srange = clang_getCursorExtent(cursor); 
-    CXSourceLocation cstart = clang_getRangeStart(srange);
-    CXSourceLocation cend = clang_getRangeEnd(srange);
-
-    clang_getFileLocation(cstart, NULL, NULL,NULL, &this->start);
-    clang_getFileLocation(cend, NULL, NULL, NULL, &this->end);
-  }
+struct type_data {
+    std::string type;
+    template_type tt;
+    type_bools bools;
+    std::set<std::string> nested_template_types;
 };
 
-struct var_data{
-  type_data var_type_data;
-  std::string name;
+struct var_data {
+    type_data var_type_data;
+    std::string name;
 };
 
-struct record_data{
-  type_data rec_type_data;
-  std::vector<var_data> fields;
+struct record_data {
+    type_data rec_type_data;
+    std::vector<var_data> fields;
 
-  source_range loc;
+    source_range loc;
+
+    const std::string name_() const {
+        return rec_type_data.type;
+    }
+
+    const std::set<std::string> all_ttypes() const {
+        std::set<std::string> ttypes;
+        for (const auto& f : fields) {
+            ttypes.insert(f.var_type_data.nested_template_types.begin(),
+                          f.var_type_data.nested_template_types.end());
+        }
+        return ttypes;
+    }
+
+    const std::string str(const std::string& file) const {
+        const std::string body = str_sub(file, loc.start, loc.end);
+        return str_typedef(body, rec_type_data.type);
+    }
 };
 
+struct function_data {
+    type_data func_type_data;
+    std::string name;
 
-struct function_data{
-  type_data ret_type_data;
-  std::string name;
+    std::vector<var_data> args;
+    template_type tt;
+    source_range loc;
 
-  std::vector<var_data> args;
+    const std::string name_() {
+        return name;
+    }
 
-  source_range loc;
+    const std::string type_() {
+        return func_type_data.type;
+    }
+
+    const std::set<std::string> all_ttypes() const {
+        return func_type_data.nested_template_types;
+    }
 };
 
+class state {
+  public:
+    std::map<std::string, record_data> records;
+    std::vector<std::string> record_order;
 
-
-
-class state{
-public:
-  std::map<std::string, record_data> records;
-  std::vector<std::string> record_order;
-
-  std::map<std::string, function_data> functions;
-  std::vector<std::string> function_order;
-
-  void insert_record(type_data rec_type_data,record_data rec){
-  }
-
-  void insert_function(function_data func){
-  }
+    std::map<std::string, function_data> functions;
+    std::vector<std::string> function_order;
 };
-
