@@ -1,16 +1,14 @@
 # c_templates_capi
 
-A proof-of-concept tool that generates C macro-based generics by parsing C source files with libclang. Built primarily as a learning project to explore what's possible with the libclang API — not something you'd want in production, but it works (kinda). It is also something I wrote a long time ago I am aware that you can go about it in a better way(use C++) and maybe structure the macros in a better way and use concat macros to help parametrise the names of the functions and types instead of using this tool.
-
+A proof-of-concept tool that generates C macro-based generics using libclang. Built as an early learning project introducing me to compiler tooling and design as well as being the reason for [trt](https://github.com/GeorgeTerzis/trt), my ongoing LLVM-based programming language project
 ## What it does
 
-C doesn't have generics. The usual workarounds are `void*`, macros written by hand, or code generation. This tool takes a third approach: you annotate your C structs and functions with special naming conventions, and the tool generates a re-includable header that uses `##` token-pasting macros to stamp out type-safe instantiations.
+C doesn't have generics. The usual workarounds are `void*`, macros written by hand. Here you annotate your C structs and functions with special naming conventions, and the tool generates a re-includable header that uses `##` token-pasting macros to stamp out type-safe instantiations.
 
 The output is a header you can include multiple times with different type definitions:
 
 ## Why
-I wanted an excuse to dig into libclang. I tried the C++ API first but the abstractions felt heavy, so I dropped down to the C API which turned out to be much more manageable.
-The goal was to see if I could make C generics less painful to write by hand. I didn't really succeed, but I learned a lot about AST traversal along the way and it gave an intrest for compilers and code generation tools in general.
+I wanted an excuse to dig into libclang.The goal was to see if I could make C generics less painful to write by hand. I didn't really succeed.
 
 ```c
 #define a_ti int
@@ -50,7 +48,7 @@ Anything not matching these patterns is ignored.
 
 ## Limitations
 
-This is a proof of concept. Known rough edges:
+Known rough edges:
 
 - Circular dependencies between template entities can cause strange ordering issues in the output
 - Type parameters must be single-word identifiers (pointer types need to be `typedef`'d first)
