@@ -8,7 +8,8 @@ C doesn't have generics. The usual workarounds are `void*`, macros written by ha
 The output is a header you can include multiple times with different type definitions:
 
 ## Why
-I wanted an excuse to dig into libclang.The goal was to see if I could make C generics less painful to write by hand. I didn't really succeed.
+I wanted an excuse to dig into libclang.The goal was to see if I could make C generics less painful to write by hand. I didn't really succeed. I would say just create some helper macros to do the naem mangling along with the re-includable header files.
+***(or use C++)***
 
 ```c
 #define a_ti int
